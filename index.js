@@ -118,8 +118,8 @@ const octaves = {
 
 const volumes = {
   'sine': 1,
-  'triangle': .1,
-  'square': .02
+  'triangle': .5,
+  'square': .16
 }
 
 var context = new AudioContext(); // Create audio container
