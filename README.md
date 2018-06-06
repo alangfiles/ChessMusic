@@ -1,4 +1,4 @@
-#Chess Music
+# Chess Music
 
 ## Let's make music from Chess, and have some other grand ideas too...
 
