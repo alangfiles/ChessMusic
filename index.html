@@ -12,7 +12,7 @@
 <body>
   
   <input type="textarea" id="pgn-input" placeholder="Input PGN Game"></input>
-  <button> Play</button>
+  <button onclick="playSongFromIndex(0);"> Play Song</button>
   
   <div id="chess-game">
     A playing version of the game goes here.
@@ -23,7 +23,8 @@
   <div id="musical-score">
     A music staff with the score of the game goes here.
   </div>
-  
+  <br/>
+  <h1 id="move"></h1>
   
   <script src="index.js"></script>
 </body>
