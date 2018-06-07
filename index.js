@@ -14,9 +14,7 @@ let halfsteps = [
   { note: 'g#', freq: 103.826 }
 ]
 
-const allnotes = [
-  55, 58.2705, 61.7354, 65.4064, 69.2957, 73.4162, 77.7817, 82.4069, 87.3071, 92.4986, 97.9989, 103.826, 110, 116.541, 123.4708, 130.8128, 138.5914, 146.8324, 155.5634, 164.8138, 174.6142, 184.9972, 195.9978, 207.652, 220, 233.082, 246.9416, 261.6256, 277.1828, 293.6648, 311.1268, 329.6276, 349.2284, 369.9944, 391.9956, 415.304, 440, 466.164, 493.8832, 523.2512, 554.3656, 587.3296, 622.2536, 659.2552, 698.4568, 739.9888, 783.9912, 830.608, 880, 932.328, 987.7664, 1046.5024, 1108.7312, 1174.6592, 1244.5072, 1318.5104, 1396.9136, 1479.9776, 1567.9824, 1661.216, 1760, 1864.656, 1975.5328, 2093.0048
-];
+const allnotes = [  {"note": "a1","freq": 55  },  {"note": "a#1","freq": 58.2705  },  {"note": "b1","freq": 61.7354  },  {"note": "c1","freq": 65.4064  },  {"note": "c#1","freq": 69.2957  },  {"note": "d1","freq": 73.4162  },  {"note": "d#1","freq": 77.7817  },  {"note": "e1","freq": 82.4069  },  {"note": "f1","freq": 87.3071  },  {"note": "f#1","freq": 92.4986  },  {"note": "g1","freq": 97.9989  },  {"note": "g#1","freq": 103.826  },  {"note": "a2","freq": 110  },  {"note": "a#2","freq": 116.541  },  {"note": "b2","freq": 123.4708  },  {"note": "c2","freq": 130.8128  },  {"note": "c#2","freq": 138.5914  },  {"note": "d2","freq": 146.8324  },  {"note": "d#2","freq": 155.5634  },  {"note": "e2","freq": 164.8138  },  {"note": "f2","freq": 174.6142  },  {"note": "f#2","freq": 184.9972  },  {"note": "g2","freq": 195.9978  },  {"note": "g#2","freq": 207.652  },  {"note": "a3","freq": 220  },  {"note": "a#3","freq": 233.082  },  {"note": "b3","freq": 246.9416  },  {"note": "c3","freq": 261.6256  },  {"note": "c#3","freq": 277.1828  },  {"note": "d3","freq": 293.6648  },  {"note": "d#3","freq": 311.1268  },  {"note": "e3","freq": 329.6276  },  {"note": "f3","freq": 349.2284  },  {"note": "f#3","freq": 369.9944  },  {"note": "g3","freq": 391.9956  },  {"note": "g#3","freq": 415.304  },  {"note": "a4","freq": 440  },  {"note": "a#4","freq": 466.164  },  {"note": "b4","freq": 493.8832  },  {"note": "c4","freq": 523.2512  },  {"note": "c#4","freq": 554.3656  },  {"note": "d4","freq": 587.3296  },  {"note": "d#4","freq": 622.2536  },  {"note": "e4","freq": 659.2552  },  {"note": "f4","freq": 698.4568  },  {"note": "f#4","freq": 739.9888  },  {"note": "g4","freq": 783.9912  },  {"note": "g#4","freq": 830.608  },  {"note": "a5","freq": 880  },  {"note": "a#5","freq": 932.328  },  {"note": "b5","freq": 987.7664  },  {"note": "c5","freq": 1046.5024  },  {"note": "c#5","freq": 1108.7312  },  {"note": "d5","freq": 1174.6592  },  {"note": "d#5","freq": 1244.5072  },  {"note": "e5","freq": 1318.5104  },  {"note": "f5","freq": 1396.9136  },  {"note": "f#5","freq": 1479.9776  },  {"note": "g5","freq": 1567.9824  },  {"note": "g#5","freq": 1661.216  },  {"note": "a6","freq": 1760  },  {"note": "a#6","freq": 1864.656  },  {"note": "b6","freq": 1975.5328  },  {"note": "c6","freq": 2093.0048  }]
 
 const baseNotes = {
   a: halfsteps[0].freq,
@@ -133,6 +131,8 @@ function playSongFromIndex(index) {
   //Play note
   let currentMove = split[index];
   let duration, note, type;
+
+  let notedisplay = '';
   if (currentMove[0] == "O") {
     duration = durations.N;
     note = baseNotes.a * Math.pow(2, octaves[4]);
@@ -141,7 +141,8 @@ function playSongFromIndex(index) {
     duration = durations[currentMove[0]];
     //note = baseNotes[currentMove[1]] * Math.pow(2, octaves[currentMove[2]]);
     let squarenumber = 8 * (currentMove[2] -1) + currentMove[1].charCodeAt(0)-97
-    note = allnotes[squarenumber]
+    note = allnotes[squarenumber].freq;
+    notedisplay = allnotes[squarenumber].note;
     type = types[currentMove[0]];
   }
   let oscillator = context.createOscillator();
@@ -161,6 +162,7 @@ function playSongFromIndex(index) {
 
   //Display move
   displayMove(index);
+  displayNote(notedisplay);
 
   //Delay and play remainder of song
   setTimeout(function () {
@@ -217,4 +219,8 @@ function playSong(index) {
 
 function displayMove(move) {
   document.querySelector("#move").innerHTML = processedInput[move];
+}
+
+function displayNote(note) {
+  document.querySelector("#note").innerHTML = note;
 }
