@@ -11,18 +11,41 @@
 </head>
 <body>
   
-  <input type="textarea" id="pgn-input" placeholder="Input PGN Game"></input>
+  <input type="textarea" id="pgn-input" placeholder="Input PGN Game" style="display: none"></input>
   <button onclick="playSongFromIndex(0);"> Play Song</button>
-  
-  <div id="chess-game">
-    A playing version of the game goes here.
-    <br/>
+  <br/>
+  <br/>
+
+  <div id="chess-game" style="font-family: monospace; letter-spacing: 22px; padding: 22px 0 22px 22px; font-size: 32px; border: 1px solid; display: inline-block;">
+    RNBQKBNR<br/>
+    PPPPPPPP<br/>
+    --------<br/>
+    --------<br/>
+    --------<br/>
+    --------<br/>
+    PPPPPPPP<br/>
+    RNBQKBNR<br/>
+  </div>
+
+  <style>
+  img {
+    height: 50px;
+    position: absolute;
+    top: 80px;
+  }
+  </style>
+
+  <img src="piano-octave4.png" style="top: 80px" />
+  <img src="piano-octave3.png" style="top: 160px" />
+  <img src="piano-octave2.png" style="top: 240px" />
+  <img src="piano-octave1.png" style="top: 320px" />
+
+
+  <div id="pgn" style="display: none">
+    A highlighted walkthrough of the PGN goes here.
     <h1 id="move"></h1>
   </div>
-  <div id="pgn">
-    A highlighted walkthrough of the PGN goes here.
-  </div>
-  <div id="musical-score">
+  <div id="musical-score" style="display: none">
     A music staff with the score of the game goes here.
     <br/>
     <h1 id="note"></h1>
