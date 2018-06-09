@@ -192,18 +192,15 @@ function displayMove(moveText, noteName, board, row, column, piece) {
   document.querySelector("body").classList.add("col-" + column);  
 
   //Row class
-  document.querySelector("body").classList.remove("row-1-2");
-  document.querySelector("body").classList.remove("row-3-4");
-  document.querySelector("body").classList.remove("row-5-6");
-  document.querySelector("body").classList.remove("row-7-8");
-  if (row === 1 || row === 2)
-    document.querySelector("body").classList.add("row-1-2");
-  if (row === 3 || row === 4)
-    document.querySelector("body").classList.add("row-3-4");
-  if (row === 5 || row === 6)
-    document.querySelector("body").classList.add("row-5-6");
-  if (row === 7 || row === 8)
-    document.querySelector("body").classList.add("row-7-8");
+  document.querySelector("body").classList.remove("row-1");
+  document.querySelector("body").classList.remove("row-2");
+  document.querySelector("body").classList.remove("row-3");
+  document.querySelector("body").classList.remove("row-4");
+  document.querySelector("body").classList.remove("row-5");
+  document.querySelector("body").classList.remove("row-6");
+  document.querySelector("body").classList.remove("row-7");
+  document.querySelector("body").classList.remove("row-8");
+  document.querySelector("body").classList.add("row-" + row);
 }
 
 

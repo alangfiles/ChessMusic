@@ -13,8 +13,8 @@
 
     button {
       position: absolute;
-      top: 100px;
-      left: 737px;
+      top: 670px;
+      left: 10px;
     }
 
     #chess-board {
@@ -25,25 +25,25 @@
       border: 1px solid; 
       display: inline-block;
       position: absolute;
-      top: 208px;
+      top: 288px;
     }
 
     .octave {      
       height: 50px;
       position: absolute;
-      top: 288px;
+      top: 368px;
       left: 452px;
     }
     #brackets-h {
       position: absolute;
-      top: 226px;
+      top: 306px;
       left: 347px;
       font-size: 66px;
     }
 
     .octave-single {
       position: absolute;
-      top: 0px;
+      top: 80px;
       left: 8px;
       width: 339px;
       height: 125px;
@@ -51,32 +51,32 @@
 
     .arrow-vertical {
       position: absolute;
-      top: 126px;
+      top: 206px;
       left: -100px;
     }
     body.col-a .arrow-vertical {
-      left: 17px;
+      left: -9px;
     }
     body.col-b .arrow-vertical {
-      left: 55px;
+      left: 34px;
     }
     body.col-c .arrow-vertical {
-      left: 108px;
+      left: 100px;
     }
     body.col-d .arrow-vertical {
-      left: 143px;
+      left: 123px;
     }
     body.col-e .arrow-vertical {
-      left: 181px;
+      left: 165px;
     }
     body.col-f .arrow-vertical {
-      left: 232px;
+      left: 222px;
     }
     body.col-g .arrow-vertical {
-      left: 267px;
+      left: 253px;
     }
     body.col-h .arrow-vertical {
-      left: 305px;
+      left: 282px;
     }
 
     .arrow-horizontal {
@@ -84,64 +84,143 @@
       top: -100px;
       left: 374px;
     }
-    body.row-1-2 .arrow-horizontal {
-      top: 477px;
+    body.row-1 .arrow-horizontal,
+    body.row-2 .arrow-horizontal {
+      top: 537px;
     }
-    body.row-3-4 .arrow-horizontal {
-      top: 402px;
+    body.row-3 .arrow-horizontal,
+    body.row-4 .arrow-horizontal {
+      top: 462px;
     }
-    body.row-5-6 .arrow-horizontal {
-      top: 327px;
+    body.row-5 .arrow-horizontal,
+    body.row-6 .arrow-horizontal {
+      top: 387px;
     }
-    body.row-7-8 .arrow-horizontal {
-      top: 250px;
+    body.row-7 .arrow-horizontal,
+    body.row-8 .arrow-horizontal {
+      top: 310px;
     }
 
-    #note-key {
+    .note-key {
       position: absolute;
       top: 0px;
       left: 400px;
-      font-size: 32px;
-      line-height: 40px;
+      font-size: 64px;
+      line-height: 75px;
     }
+    .note-key.left {
+      left: 400px;
+    }
+    .note-key.right {
+      left: 830px;
+    }
+
     .note {
       position: absolute;
-      height: 25px;
-      margin-top: 6px;
+      height: 50px;
+      margin-top: 12px;
     }
     .wave {
       position: absolute;
-      left: 82px;
-      margin-top: 8px;
-      height: 23px;
+      left: 155px;
+      margin-top: 16px;
+      height: 46px;
     }
 
     #note-box {
       position: absolute;
       top: -100px;
-      left: 397px;
-      height: 28px;
-      width: 199px;
+      height: 63px;
+      width: 398px;
       border: solid 2px red;
     }
     body.piece-P #note-box {
       top: 3px;
+      left: 391px;
     }
     body.piece-R #note-box {
-      top: 43px;
+      top: 79px;
+      left: 391px;
     }
     body.piece-N #note-box {
-      top: 84px;
+      top: 154px;
+      left: 391px;
     }
     body.piece-B #note-box {
-      top: 124px;
+      top: 3px;
+      left: 820px;
     }
     body.piece-Q #note-box {
-      top: 165px;
+      top: 79px;
+      left: 820px;
     }
     body.piece-K #note-box, body.piece-O #note-box {
-      top: 205px;
+      top: 154px;
+      left: 820px;
     }
+
+  #crosshair-h {
+    position: absolute;
+    border-top: solid 1px red;
+    width: 368px;
+    height: 0px;
+    top: -100px;
+    left: 8px;
+  }
+  body.row-1 #crosshair-h {
+    top: 592px;
+  }
+  body.row-2 #crosshair-h {
+    top: 555px;
+  }
+  body.row-3 #crosshair-h {
+    top: 518px;
+  }
+  body.row-4 #crosshair-h {
+    top: 491px;
+  }
+  body.row-5 #crosshair-h {
+    top: 444px;
+  }
+  body.row-6 #crosshair-h {
+    top: 407px;
+  }
+  body.row-7 #crosshair-h {
+    top: 370px;
+  }
+  body.row-8 #crosshair-h {
+    top: 333px;
+  }
+
+  #crosshair-v {
+    position: absolute;
+    border-left: solid 1px red;
+    width: 0px;
+    height: 349px;
+    top: 281px;
+    left: -100px;
+  }
+  body.col-a #crosshair-v {
+    left: 37px;
+  }
+  body.col-b #crosshair-v {
+    left: 77px;
+  }
+  body.col-c #crosshair-v {
+    left: 117px;
+  }
+  body.col-d #crosshair-v {
+    left: 157px;
+  }
+  body.col-e #crosshair-v {
+    left: 197px;
+  }
+  body.col-f #crosshair-v {
+    left: 240px;
+  }
+  body.col-g #crosshair-v {
+    left: 277px;
+  }
   </style>
 </head>
 <body>
@@ -165,19 +244,25 @@
     }<br/>
     }<br/>
   </div>
+  <div id="crosshair-h">
+  </div>
+  <div id="crosshair-v">
+  </div>
 
   <img src="arrow-vertical.png" class="arrow-vertical" />
   <img src="piano-octave-single.png" class="octave-single" />
   <img src="arrow-horizontal.png" class="arrow-horizontal" />
-  <img src="piano-octave4.png" class="octave" style="top: 246px" />
-  <img src="piano-octave3.png" class="octave" style="top: 322px" />
-  <img src="piano-octave2.png" class="octave" style="top: 399px" />
-  <img src="piano-octave1.png" class="octave" style="top: 476px" />
+  <img src="piano-octave4.png" class="octave" style="top: 326px" />
+  <img src="piano-octave3.png" class="octave" style="top: 402px" />
+  <img src="piano-octave2.png" class="octave" style="top: 479px" />
+  <img src="piano-octave1.png" class="octave" style="top: 556px" />
 
-  <div id="note-key">
+  <div class="note-key left">
     P = <img class="note eighth" src="eighth-note.png" /><img class="wave" src="wave-sine.png" /><br/>
     R = <img class="note quarter" src="quarter-note.png" /><img class="wave" src="wave-triangle.png" /><br/>
     N = <img class="note quarter" src="quarter-note.png" /><img class="wave" src="wave-triangle.png" /><br/>
+  </div>
+  <div class="note-key right">
     B = <img class="note quarter" src="quarter-note.png" /><img class="wave" src="wave-triangle.png" /><br/>
     Q = <img class="note quarter" src="quarter-note.png" /><img class="wave" src="wave-square.png" /><br/>
     K = <img class="note quarter" src="quarter-note.png" /><img class="wave" src="wave-square.png" /><br/>
