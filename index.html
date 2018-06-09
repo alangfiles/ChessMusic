@@ -8,15 +8,148 @@
   
   <!--  Styles  -->
   <link rel="stylesheet" href="styles/index.css">
+
+  <style>
+
+    button {
+      position: absolute;
+      top: 100px;
+      left: 737px;
+    }
+
+    #chess-board {
+      font-family: monospace; 
+      letter-spacing: 22px; 
+      padding: 22px 0 22px 22px; 
+      font-size: 32px; 
+      border: 1px solid; 
+      display: inline-block;
+      position: absolute;
+      top: 208px;
+    }
+
+    .octave {      
+      height: 50px;
+      position: absolute;
+      top: 288px;
+      left: 452px;
+    }
+    #brackets-h {
+      position: absolute;
+      top: 226px;
+      left: 347px;
+      font-size: 66px;
+    }
+
+    .octave-single {
+      position: absolute;
+      top: 0px;
+      left: 8px;
+      width: 339px;
+      height: 125px;
+    }
+
+    .arrow-vertical {
+      position: absolute;
+      top: 126px;
+      left: -100px;
+    }
+    body.col-a .arrow-vertical {
+      left: 17px;
+    }
+    body.col-b .arrow-vertical {
+      left: 55px;
+    }
+    body.col-c .arrow-vertical {
+      left: 108px;
+    }
+    body.col-d .arrow-vertical {
+      left: 143px;
+    }
+    body.col-e .arrow-vertical {
+      left: 181px;
+    }
+    body.col-f .arrow-vertical {
+      left: 232px;
+    }
+    body.col-g .arrow-vertical {
+      left: 267px;
+    }
+    body.col-h .arrow-vertical {
+      left: 305px;
+    }
+
+    .arrow-horizontal {
+      position: absolute;
+      top: -100px;
+      left: 374px;
+    }
+    body.row-1-2 .arrow-horizontal {
+      top: 477px;
+    }
+    body.row-3-4 .arrow-horizontal {
+      top: 402px;
+    }
+    body.row-5-6 .arrow-horizontal {
+      top: 327px;
+    }
+    body.row-7-8 .arrow-horizontal {
+      top: 250px;
+    }
+
+    #note-key {
+      position: absolute;
+      top: 0px;
+      left: 400px;
+      font-size: 32px;
+      line-height: 40px;
+    }
+    .note {
+      position: absolute;
+      height: 25px;
+      margin-top: 6px;
+    }
+    .wave {
+      position: absolute;
+      left: 82px;
+      margin-top: 8px;
+      height: 23px;
+    }
+
+    #note-box {
+      position: absolute;
+      top: -100px;
+      left: 397px;
+      height: 28px;
+      width: 199px;
+      border: solid 2px red;
+    }
+    body.piece-P #note-box {
+      top: 3px;
+    }
+    body.piece-R #note-box {
+      top: 43px;
+    }
+    body.piece-N #note-box {
+      top: 84px;
+    }
+    body.piece-B #note-box {
+      top: 124px;
+    }
+    body.piece-Q #note-box {
+      top: 165px;
+    }
+    body.piece-K #note-box, body.piece-O #note-box {
+      top: 205px;
+    }
+  </style>
 </head>
 <body>
   
   <input type="textarea" id="pgn-input" placeholder="Input PGN Game" style="display: none"></input>
-  <button onclick="playSongFromIndex(0);"> Play Song</button>
-  <br/>
-  <br/>
+  <button onclick="playSongFromMoveIndex(0);"> Play </button>
 
-  <div id="chess-game" style="font-family: monospace; letter-spacing: 22px; padding: 22px 0 22px 22px; font-size: 32px; border: 1px solid; display: inline-block;">
+  <div id="chess-board">
     RNBQKBNR<br/>
     PPPPPPPP<br/>
     --------<br/>
@@ -26,19 +159,30 @@
     PPPPPPPP<br/>
     RNBQKBNR<br/>
   </div>
+  <div id="brackets-h">
+    }<br/>
+    }<br/>
+    }<br/>
+    }<br/>
+  </div>
 
-  <style>
-  img {
-    height: 50px;
-    position: absolute;
-    top: 80px;
-  }
-  </style>
+  <img src="arrow-vertical.png" class="arrow-vertical" />
+  <img src="piano-octave-single.png" class="octave-single" />
+  <img src="arrow-horizontal.png" class="arrow-horizontal" />
+  <img src="piano-octave4.png" class="octave" style="top: 246px" />
+  <img src="piano-octave3.png" class="octave" style="top: 322px" />
+  <img src="piano-octave2.png" class="octave" style="top: 399px" />
+  <img src="piano-octave1.png" class="octave" style="top: 476px" />
 
-  <img src="piano-octave4.png" style="top: 80px" />
-  <img src="piano-octave3.png" style="top: 160px" />
-  <img src="piano-octave2.png" style="top: 240px" />
-  <img src="piano-octave1.png" style="top: 320px" />
+  <div id="note-key">
+    P = <img class="note eighth" src="eighth-note.png" /><img class="wave" src="wave-sine.png" /><br/>
+    R = <img class="note quarter" src="quarter-note.png" /><img class="wave" src="wave-triangle.png" /><br/>
+    N = <img class="note quarter" src="quarter-note.png" /><img class="wave" src="wave-triangle.png" /><br/>
+    B = <img class="note quarter" src="quarter-note.png" /><img class="wave" src="wave-triangle.png" /><br/>
+    Q = <img class="note quarter" src="quarter-note.png" /><img class="wave" src="wave-square.png" /><br/>
+    K = <img class="note quarter" src="quarter-note.png" /><img class="wave" src="wave-square.png" /><br/>
+  </div>
+  <div id="note-box"></div>
 
 
   <div id="pgn" style="display: none">
@@ -51,8 +195,6 @@
     <h1 id="note"></h1>
   </div>
   <br/>
-  
-  
   <script src="index.js"></script>
 </body>
 </html>

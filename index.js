@@ -1,54 +1,54 @@
 let baseNotes = [{
-    note: 'a',
+    name: 'a',
     freq: 55
   },
   {
-    note: 'a#',
+    name: 'a#',
     freq: 58.2705
   },
   {
-    note: 'b',
+    name: 'b',
     freq: 61.7354
   },
   {
-    note: 'c',
+    name: 'c',
     freq: 65.4064
   },
   {
-    note: 'c#',
+    name: 'c#',
     freq: 69.2957
   },
   {
-    note: 'd',
+    name: 'd',
     freq: 73.4162
   },
   {
-    note: 'd#',
+    name: 'd#',
     freq: 77.7817
   },
   {
-    note: 'e',
+    name: 'e',
     freq: 82.4069
   },
   {
-    note: 'f',
+    name: 'f',
     freq: 87.3071
   },
   {
-    note: 'f#',
+    name: 'f#',
     freq: 92.4986
   },
   {
-    note: 'g',
+    name: 'g',
     freq: 97.9989
   },
   {
-    note: 'g#',
+    name: 'g#',
     freq: 103.826
   },
 ]
 
-const scaleIndexes = {
+const scaleIndexesForColumns = {
   a: 0,
   b: 2,
   c: 4,
@@ -59,24 +59,17 @@ const scaleIndexes = {
   h: 11
 }
 
-
-
-
-const initialNoteLength = 160;
-const finalNoteLength = 125;
-let currentNoteLength = initialNoteLength;
-
-const durations = {
-  P: 1,
-  B: 2,
-  N: 2,
-  R: 2,
-  Q: 2,
-  K: 2
+const beatsForPieces = {
+  P: .5,
+  B: 1,
+  N: 1,
+  R: 1,
+  Q: 1,
+  K: 1
 }
 
 
-const types = {
+const waveTypesForPieces = {
   P: 'sine',
   B: 'triangle',
   N: 'triangle',
@@ -85,7 +78,7 @@ const types = {
   K: 'square'
 }
 
-const octaves = {
+const octavesForRows = {
   1: 1,
   2: 1,
   3: 2,
@@ -96,64 +89,121 @@ const octaves = {
   8: 4
 }
 
-const volumes = {
+const volumesForWaveTypes = {
   'sine': 1,
   'triangle': .5,
   'square': .16
 }
 
-var context = new AudioContext(); // Create audio container
+const initialBeatMilliseconds = 320;
+const finalBeatMilliseconds = 250;
+let currentBeatMilliseconds = initialBeatMilliseconds;
 
-function playSongFromIndex(index) {
+//Initialize audio
+var audioContext = new AudioContext();
 
-  //Play note
-  let currentMove = split[index];
-  let duration, note, type;
+function playSongFromMoveIndex(moveIndex) {
 
-  if (currentMove[0] == "O") {
-    duration = durations.N;
-    note = baseNotes[scaleIndexes.a].freq * Math.pow(2, octaves[4]);
-    type = types.K;
+  //Get move info 
+  let moveText = splitMoves[moveIndex]; 
+  let piece = parsedMoves[moveIndex][0];
+  let column = parsedMoves[moveIndex][1];
+  let row = parsedMoves[moveIndex][2];
+  let board = parsedMoves[moveIndex][3];
+  let isCastle = parsedMoves[moveIndex][0] === 'O';
+
+  //Get note info
+  let noteBeats, noteFrequency, noteName, noteWaveType;
+  if (!isCastle) {
+    noteBeats = beatsForPieces[piece];
+    noteFrequency = baseNotes[scaleIndexesForColumns[column]].freq * Math.pow(2, octavesForRows[row]);
+    noteName = baseNotes[scaleIndexesForColumns[column]].name + octavesForRows[row];
+    noteWaveType = waveTypesForPieces[piece];
   } else {
-    duration = durations[currentMove[0]];
-    note = baseNotes[scaleIndexes[currentMove[1]]].freq * Math.pow(2, octaves[currentMove[2]]);
-    notedisplay = baseNotes[scaleIndexes[currentMove[1]]].note + octaves[currentMove[2]];
-    type = types[currentMove[0]];
+    noteBeats = beatsForPieces.K;
+    noteFrequency = baseNotes[scaleIndexesForColumns.a].freq * Math.pow(2, octavesForRows[4]);
+    noteWaveType = waveTypesForPieces.K;
   }
-  let oscillator = context.createOscillator();
-  let gainNode = context.createGain();
-  oscillator.connect(gainNode);
-  gainNode.gain.setValueAtTime(volumes[type], 1);
-  gainNode.connect(context.destination);
 
+  //Start sound
+  let oscillator = audioContext.createOscillator();
+  let gainNode = audioContext.createGain();
+  oscillator.connect(gainNode);
+  gainNode.gain.setValueAtTime(volumesForWaveTypes[noteWaveType], 0);
+  gainNode.connect(audioContext.destination);
   oscillator.start();
-  oscillator.type = type;
-  oscillator.frequency.value = note;
+  oscillator.type = noteWaveType;
+  oscillator.frequency.value = noteFrequency;
 
   //Update speed
-  if (processedInput[index].includes('x')) {
-    currentNoteLength = finalNoteLength + (initialNoteLength - finalNoteLength) * ((processedInput.length - index) / processedInput.length);
+  if (splitMoves[moveIndex].includes('x')) {
+    currentBeatMilliseconds = finalBeatMilliseconds + (initialBeatMilliseconds - finalBeatMilliseconds) * ((splitMoves.length - moveIndex) / splitMoves.length);
   }
 
-  //Update display
-  let noteDisplay = '';
-  if (currentMove[0] !== "O")
-    noteDisplay = baseNotes[scaleIndexes[currentMove[1]]].note + octaves[currentMove[2]];
-  displayMove(index);
-  displayNote(noteDisplay);
-  document.querySelector("#chess-game").innerHTML = currentMove[3];
+  //Display move
+  displayMove(moveText, noteName, board, row, column, piece);
 
   //Delay and play remainder of song
   setTimeout(function () {
+    //Stop sound
     oscillator.stop();
-    if (index + 1 < split.length)
-      playSongFromIndex(index + 1);
-    else {
+    if (moveIndex + 1 < parsedMoves.length)
+      //Play remainder of song
+      playSongFromMoveIndex(moveIndex + 1);
+    else {      
+      //Reset
       document.querySelector("#move").innerHTML = '';
-      currentNoteLength = initialNoteLength;
+      document.querySelector("body").className = '';
+      currentBeatMilliseconds = initialBeatMilliseconds;
     }
-  }, duration * currentNoteLength);
+  }, noteBeats * currentBeatMilliseconds);
+}
 
+function displayMove(moveText, noteName, board, row, column, piece) {
+
+  //Move text
+  document.querySelector("#move").innerHTML = splitMoves[moveText];
+
+  //Note name
+  document.querySelector("#note").innerHTML = noteName;
+
+  //Board
+  document.querySelector("#chess-board").innerHTML = board;
+
+  //Piece class
+  document.querySelector("body").classList.remove("piece-P");
+  document.querySelector("body").classList.remove("piece-R");
+  document.querySelector("body").classList.remove("piece-N");
+  document.querySelector("body").classList.remove("piece-B");
+  document.querySelector("body").classList.remove("piece-Q");
+  document.querySelector("body").classList.remove("piece-K");
+  document.querySelector("body").classList.remove("piece-O"); 
+  document.querySelector("body").classList.add("piece-" + piece);
+
+  //Column class
+  document.querySelector("body").classList.remove("col-a");
+  document.querySelector("body").classList.remove("col-b");
+  document.querySelector("body").classList.remove("col-c");
+  document.querySelector("body").classList.remove("col-d");
+  document.querySelector("body").classList.remove("col-e");
+  document.querySelector("body").classList.remove("col-f");
+  document.querySelector("body").classList.remove("col-g");
+  document.querySelector("body").classList.remove("col-h");
+  document.querySelector("body").classList.add("col-" + column);  
+
+  //Row class
+  document.querySelector("body").classList.remove("row-1-2");
+  document.querySelector("body").classList.remove("row-3-4");
+  document.querySelector("body").classList.remove("row-5-6");
+  document.querySelector("body").classList.remove("row-7-8");
+  if (row === 1 || row === 2)
+    document.querySelector("body").classList.add("row-1-2");
+  if (row === 3 || row === 4)
+    document.querySelector("body").classList.add("row-3-4");
+  if (row === 5 || row === 6)
+    document.querySelector("body").classList.add("row-5-6");
+  if (row === 7 || row === 8)
+    document.querySelector("body").classList.add("row-7-8");
 }
 
 
@@ -165,44 +215,6 @@ function playSongFromIndex(index) {
 
 
 
-function playSound(note, time, duration) {
-
-  let oscillator = context.createOscillator();
-
-  oscillator.type = 'sine';
-  oscillator.frequency.value = note;
-
-  oscillator.connect(context.destination); // Connect sound to output
-  oscillator.start(time);
-  oscillator.stop(time + (duration / 1000));
-
-}
-
-function playSong(index) {
-
-  var startTime = context.currentMoveTime;
-  let timeSoFar = 0;
-
-  for (var i = 0; i < split.length; i++) {
-    let currentMove = split[i];
-    let duration = durations[currentMove[0]];
-    let note = baseNotes[scaleIndexes[currentMove[1]]] * Math.pow(2, currentMove[2]);
-    note = (note / 32) + 300; //scale down the note
-
-    playSound(note, startTime + timeSoFar, duration);
-    displayMove(currentMove);
-    timeSoFar += (duration / 1000);
-  }
-
-}
-
-function displayMove(move) {
-  document.querySelector("#move").innerHTML = processedInput[move];
-}
-
-function displayNote(note) {
-  document.querySelector("#note").innerHTML = note;
-}
 
 
 
@@ -224,7 +236,7 @@ hxg5 29. b3 Ke6 30. a3 Kd6 31. axb4 cxb4 32. Ra5 Nd5 33. f3 Bc8 34. Kf2 Bf5
 35. Ra7 g6 36. Ra6+ Kc5 37. Ke1 Nf4 38. g3 Nxh3 39. Kd2 Kb5 40. Rd6 Kc5 41. Ra6
 Nf2 42. g4 Bd3 43. Re6 1/2-1/2`;
 
-const processedInput = ["e4", "e5", "Nf3", "Nc6", "Bb5", "a6", "Ba4", "Nf6", "O-O", "Be7",
+const splitMoves = ["e4", "e5", "Nf3", "Nc6", "Bb5", "a6", "Ba4", "Nf6", "O-O", "Be7",
   "Re1", "b5", "Bb3", "d6", "c3", "O-O", "h3", "Nb8", "d4", "Nbd7",
   "c4", "c6", "cxb5", "axb5", "Nc3", "Bb7", "Bg5", "b4", "Nb1", "h6",
   "Bh4", "c5", "dxe5", "Nxe4", "Bxe7", "Qxe7", "exd6", "Qf6", "Nbd2",
@@ -235,107 +247,167 @@ const processedInput = ["e4", "e5", "Nf3", "Nc6", "Bb5", "a6", "Ba4", "Nf6", "O-
   "Kb5", "Rd6", "Kc5", "Ra6", "Nf2", "g4", "Bd3", "Re6"
 ];
 
-const simplified = ["Pe4", "Pe5", "Nf3", "Nc6", "Bb5", "Pa6", "Ba4", "Nf6", "O-O", "Be7",
-  "Re1", "Pb5", "Bb3", "Pd6", "Pc3", "O-O", "Ph3", "Nb8", "Pd4", "Nbd7",
-  "Pc4", "Pc6", "Pb5", "Pb5", "Nc3", "Bb7", "Bg5", "Pb4", "Nb1", "Ph6",
-  "Bh4", "Pc5", "Pe5", "Ne4", "Be7", "Qe7", "Pd6", "Qf6", "Nd2", "Nd6",
-  "Nc4", "Nc4", "Bc4", "Nb6", "Ne5", "Re8", "Bf7", "Rf7", "Nf7", "Re1",
-  "Qe1", "Kf7", "Qe3", "Qg5", "Qg5", "Pg5", "Pb3", "Ke6", "Pa3", "Kd6",
-  "Pb4", "Pb4", "Ra5", "Nd5", "Pf3", "Bc8", "Kf2", "Bf5", "Ra7", "g6",
-  "Ra6", "Kc5", "Ke1", "Nf4", "Pg3", "Nh3", "Kd2", "Kb5", "Rd6", "Kc5",
-  "Ra6", "Nf2", "Pg4", "Bd3", "Re6"
-];
-
-
-const split = [
-  ["P", "e", 4, 
-  `RNBQKBNR<br/>
+const parsedMoves = [
+  ["P", "e", 4,
+    `RNBQKBNR<br/>
    PPPPPPPP<br/>
    --------<br/>
    --------<br/>
    ----P---<br/>
    --------<br/>
    PPPP-PPP<br/>
-   RNBQKBNR<br/>`],
+   RNBQKBNR<br/>`
+  ],
   ["P", "e", 5,
-  `RNBQKBNR<br/>
+    `RNBQKBNR<br/>
    PPPP-PPP<br/>
    --------<br/>
    ----P---<br/>
    ----P---<br/>
    --------<br/>
    PPPP-PPP<br/>
-   RNBQKBNR<br/>`],
+   RNBQKBNR<br/>`
+  ],
   ["N", "f", 3,
-  `RNBQKBNR<br/>
+    `RNBQKBNR<br/>
    PPPP-PPP<br/>
    --------<br/>
    ----P---<br/>
    ----P---<br/>
    -----N--<br/>
    PPPP-PPP<br/>
-   RNBQKB-R<br/>`],
+   RNBQKB-R<br/>`
+  ],
   ["N", "c", 6,
-  `R-BQKBNR<br/>
-   PPPP-PPP<br/>
-   --N-----<br/>
-   ----P---<br/>
-   ----P---<br/>
-   -----N--<br/>
-   PPPP-PPP<br/>
-   RNBQKB-R<br/>`],
+    `R-BQKBNR<br/>
+  PPPP-PPP<br/>
+  --N-----<br/>
+  ----P---<br/>
+  ----P---<br/>
+  -----N--<br/>
+  PPPP-PPP<br/>
+  RNBQKB-R<br/>`
+  ],
   ["B", "b", 5,
-  `R-BQKBNR<br/>
+    `R-BQKBNR<br/>
    PPPP-PPP<br/>
    --N-----<br/>
    -B--P---<br/>
    ----P---<br/>
    -----N--<br/>
    PPPP-PPP<br/>
-   RNBQK--R<br/>`],
+   RNBQK--R<br/>`
+  ],
   ["P", "a", 6,
-  `R-BQKBNR<br/>
+    `R-BQKBNR<br/>
    -PPP-PPP<br/>
    P-N-----<br/>
    -B--P---<br/>
    ----P---<br/>
    -----N--<br/>
    PPPP-PPP<br/>
-   RNBQK--R<br/>`],
+   RNBQK--R<br/>`
+  ],
   ["B", "a", 4,
-  `R-BQKBNR<br/>
+    `R-BQKBNR<br/>
    -PPP-PPP<br/>
    P-N-----<br/>
    ----P---<br/>
    B---P---<br/>
    -----N--<br/>
    PPPP-PPP<br/>
-   RNBQK--R<br/>`],
+   RNBQK--R<br/>`
+  ],
   ["N", "f", 6,
-  `R-BQKB-R<br/>
+    `R-BQKB-R<br/>
    -PPP-PPP<br/>
    P-N--N--<br/>
    ----P---<br/>
    B---P---<br/>
    -----N--<br/>
    PPPP-PPP<br/>
-   RNBQK--R<br/>`],
+   RNBQK--R<br/>`
+  ],
   ["O", "O", 0,
-  `R-BQKB-R<br/>
+    `R-BQKB-R<br/>
    -PPP-PPP<br/>
    P-N--N--<br/>
    ----P---<br/>
    B---P---<br/>
    -----N--<br/>
    PPPP-PPP<br/>
-   RNBQ-RK-<br/>`],
-  ["B", "e", 7],
-  ["R", "e", 1],
-  ["P", "b", 5],
-  ["B", "b", 3],
-  ["P", "d", 6],
-  ["P", "c", 3],
-  ["O", "O", 0],
+   RNBQ-RK-<br/>`
+  ],
+  ["B", "e", 7,
+  `R-BQK--R<br/>
+  -PPPBPPP<br/>
+  P-N--N--<br/>
+  ----P---<br/>
+  B---P---<br/>
+  -----N--<br/>
+  PPPP-PPP<br/>
+  RNBQ-RK-<br/>`
+  ],
+  ["R", "e", 1,
+  `R-BQK--R<br/>
+  -PPPBPPP<br/>
+  P-N--N--<br/>
+  ----P---<br/>
+  B---P---<br/>
+  -----N--<br/>
+  PPPP-PPP<br/>
+  RNBQR-K-<br/>`
+  ],
+  ["P", "b", 5,
+  `R-BQK--R<br/>
+  --PPBPPP<br/>
+  P-N--N--<br/>
+  -P--P---<br/>
+  B---P---<br/>
+  -----N--<br/>
+  PPPP-PPP<br/>
+  RNBQR-K-<br/>`
+  ],
+  ["B", "b", 3,
+  `R-BQK--R<br/>
+  --PPBPPP<br/>
+  P-N--N--<br/>
+  -P--P---<br/>
+  ----P---<br/>
+  -B---N--<br/>
+  PPPP-PPP<br/>
+  RNBQR-K-<br/>`
+  ],
+  ["P", "d", 6,
+  `R-BQK--R<br/>
+  --P-BPPP<br/>
+  P-NP-N--<br/>
+  -P--P---<br/>
+  ----P---<br/>
+  -B---N--<br/>
+  PPPP-PPP<br/>
+  RNBQR-K-<br/>`
+  ],
+  ["P", "c", 3,
+  `R-BQK--R<br/>
+  --P-BPPP<br/>
+  P-NP-N--<br/>
+  -P--P---<br/>
+  ----P---<br/>
+  -BP--N--<br/>
+  PP-P-PPP<br/>
+  RNBQR-K-<br/>`
+  ],
+  ["O", "O", 0,
+  `R-BQ-RK-<br/>
+  --P-BPPP<br/>
+  P-NP-N--<br/>
+  -P--P---<br/>
+  ----P---<br/>
+  -BP--N--<br/>
+  PP-P-PPP<br/>
+  RNBQR-K-<br/>`
+  ],
   ["P", "h", 3],
   ["N", "b", 8],
   ["P", "d", 4],
