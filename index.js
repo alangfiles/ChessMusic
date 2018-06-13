@@ -113,27 +113,35 @@ function playSongFromMoveIndex(moveIndex) {
   let isCastle = parsedMoves[moveIndex][0] === 'O';
 
   //Get note info
-  let noteBeats, noteFrequency, noteName, noteWaveType;
+  let noteBeats, noteFrequency, noteName, noteWaveType, secondFreq;
   if (!isCastle) {
     noteBeats = beatsForPieces[piece];
     noteFrequency = baseNotes[scaleIndexesForColumns[column]].freq * Math.pow(2, octavesForRows[row]);
+    secondFreq = baseNotes[scaleIndexesForColumns[column]].freq * Math.pow(2,row);
     noteName = baseNotes[scaleIndexesForColumns[column]].name + octavesForRows[row];
     noteWaveType = waveTypesForPieces[piece];
   } else {
     noteBeats = beatsForPieces.K;
     noteFrequency = baseNotes[scaleIndexesForColumns.a].freq * Math.pow(2, octavesForRows[4]);
+    secondFreq = baseNotes[scaleIndexesForColumns.a].freq * Math.pow(2,4);
     noteWaveType = waveTypesForPieces.K;
   }
 
   //Start sound
   let oscillator = audioContext.createOscillator();
+  let second_oscillator = audioContext.createOscillator();
   let gainNode = audioContext.createGain();
   oscillator.connect(gainNode);
+  second_oscillator.connect(gainNode);
   gainNode.gain.setValueAtTime(volumesForWaveTypes[noteWaveType], 0);
   gainNode.connect(audioContext.destination);
   oscillator.start();
+  second_oscillator.start();
   oscillator.type = noteWaveType;
   oscillator.frequency.value = noteFrequency;
+  second_oscillator.type = noteWaveType;
+  second_oscillator.frequency.value = secondFreq;
+
 
   //Update speed
   if (splitMoves[moveIndex].includes('x')) {
@@ -147,6 +155,7 @@ function playSongFromMoveIndex(moveIndex) {
   setTimeout(function () {
     //Stop sound
     oscillator.stop();
+    second_oscillator.stop();
     if (moveIndex + 1 < parsedMoves.length)
       //Play remainder of song
       playSongFromMoveIndex(moveIndex + 1);
