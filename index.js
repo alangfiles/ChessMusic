@@ -1,3 +1,25 @@
+//Cymbal beat
+const CYMBAL_WAVE_TYPE = 'sine';
+const CYMBAL_NOTE_FREQ = 1760;
+const CYMBAL_BEAT_FREQ = 10;
+const CYMBAL_BEAT_OFFSET = 0;
+const CYMBAL_DURATION = 1;
+const CYMBAL_VOLUME = .16;
+//Snare beat
+const SNARE_WAVE_TYPE = 'square';
+const SNARE_NOTE_FREQ = 440;
+const SNARE_BEAT_FREQ = 40;
+const SNARE_BEAT_OFFSET = 0;
+const SNARE_DURATION = 2;
+const SNARE_VOLUME = .08;
+//Kick beat
+const KICK_WAVE_TYPE = 'sawtooth';
+const KICK_NOTE_FREQ = 220;
+const KICK_BEAT_FREQ = 40;
+const KICK_BEAT_OFFSET = 20;
+const KICK_DURATION = 2;
+const KICK_VOLUME = .12;
+
 let baseNotes = [{
     name: 'a',
     freq: 55
@@ -60,12 +82,12 @@ const scaleIndexesForColumns = {
 }
 
 const beatsForPieces = {
-  P: .5,
-  B: 1,
-  N: 1,
-  R: 1,
-  Q: 1,
-  K: 1
+  P: 5,
+  B: 10,
+  N: 10,
+  R: 10,
+  Q: 10,
+  K: 10
 }
 
 
@@ -90,82 +112,154 @@ const octavesForRows = {
 }
 
 const volumesForWaveTypes = {
-  'sine': 1,
-  'triangle': .5,
-  'square': .16
+  'sine': .5,
+  'triangle': .25,
+  'square': .08
 }
 
-const initialBeatMilliseconds = 320;
-const finalBeatMilliseconds = 250;
+const initialBeatMilliseconds = 32;
+const finalBeatMilliseconds = 28;
 let currentBeatMilliseconds = initialBeatMilliseconds;
 
 //Initialize audio
 var audioContext = new AudioContext();
+let moveOscillator1 = null;
+let moveOscillator2 = null;
+let cymbalOscillator = null;
+let snareOscillator = null;
+let kickOscillator = null;
 
-function playSongFromMoveIndex(moveIndex) {
+function playSongFromMoveIndex(beatIndex, moveIndex, nextMoveBeatIndex) {
+  let isMoveBeat = beatIndex === nextMoveBeatIndex;
+  let isCymbalBeatStart = (beatIndex + CYMBAL_BEAT_OFFSET) % CYMBAL_BEAT_FREQ === 0;
+  let isCymbalBeatEnd = ((beatIndex + CYMBAL_BEAT_OFFSET) - CYMBAL_DURATION) % CYMBAL_BEAT_FREQ === 0;
+  let isSnareBeatStart = (beatIndex + SNARE_BEAT_OFFSET) % SNARE_BEAT_FREQ === 0;
+  let isSnareBeatEnd = ((beatIndex + SNARE_BEAT_OFFSET) - SNARE_DURATION) % SNARE_BEAT_FREQ === 0;
+  let isKickBeatStart = (beatIndex + KICK_BEAT_OFFSET) % KICK_BEAT_FREQ === 0;  
+  let isKickBeatEnd = ((beatIndex - KICK_DURATION) + KICK_BEAT_OFFSET) % KICK_BEAT_FREQ === 0;
 
-  //Get move info 
-  let moveText = splitMoves[moveIndex]; 
-  let piece = parsedMoves[moveIndex][0];
-  let column = parsedMoves[moveIndex][1];
-  let row = parsedMoves[moveIndex][2];
-  let board = parsedMoves[moveIndex][3];
-  let isCastle = parsedMoves[moveIndex][0] === 'O';
+  //Stop percussion
+  if (isCymbalBeatEnd && cymbalOscillator !== null)
+    cymbalOscillator.stop();
+  if (isSnareBeatEnd && snareOscillator !== null)
+    snareOscillator.stop();
+  if (isKickBeatEnd && kickOscillator !== null)
+    kickOscillator.stop();
 
-  //Get note info
-  let noteBeats, noteFrequency, noteName, noteWaveType, secondFreq;
-  if (!isCastle) {
-    noteBeats = beatsForPieces[piece];
-    noteFrequency = baseNotes[scaleIndexesForColumns[column]].freq * Math.pow(2, octavesForRows[row]);
-    secondFreq = baseNotes[scaleIndexesForColumns[column]].freq * Math.pow(2,row);
-    noteName = baseNotes[scaleIndexesForColumns[column]].name + octavesForRows[row];
-    noteWaveType = waveTypesForPieces[piece];
-  } else {
-    noteBeats = beatsForPieces.K;
-    noteFrequency = baseNotes[scaleIndexesForColumns.a].freq * Math.pow(2, octavesForRows[4]);
-    secondFreq = baseNotes[scaleIndexesForColumns.a].freq * Math.pow(2,4);
-    noteWaveType = waveTypesForPieces.K;
+  //Play cymbal
+  if (isCymbalBeatStart) {
+    cymbalOscillator = audioContext.createOscillator();
+    let gainNode = audioContext.createGain();
+    cymbalOscillator.connect(gainNode);
+    gainNode.gain.setValueAtTime(CYMBAL_VOLUME, 0);
+    gainNode.connect(audioContext.destination);
+    cymbalOscillator.start();
+    cymbalOscillator.type = CYMBAL_WAVE_TYPE;
+    cymbalOscillator.frequency.value = CYMBAL_NOTE_FREQ;
   }
 
-  //Start sound
-  let oscillator = audioContext.createOscillator();
-  let second_oscillator = audioContext.createOscillator();
-  let gainNode = audioContext.createGain();
-  oscillator.connect(gainNode);
-  second_oscillator.connect(gainNode);
-  gainNode.gain.setValueAtTime(volumesForWaveTypes[noteWaveType], 0);
-  gainNode.connect(audioContext.destination);
-  oscillator.start();
-  second_oscillator.start();
-  oscillator.type = noteWaveType;
-  oscillator.frequency.value = noteFrequency;
-  second_oscillator.type = noteWaveType;
-  second_oscillator.frequency.value = secondFreq;
-
-
-  //Update speed
-  if (splitMoves[moveIndex].includes('x')) {
-    currentBeatMilliseconds = finalBeatMilliseconds + (initialBeatMilliseconds - finalBeatMilliseconds) * ((splitMoves.length - moveIndex) / splitMoves.length);
+   //Play snare
+   if (isSnareBeatStart) {
+    snareOscillator = audioContext.createOscillator();
+    let gainNode = audioContext.createGain();
+    snareOscillator.connect(gainNode);
+    gainNode.gain.setValueAtTime(SNARE_VOLUME, 0);
+    gainNode.connect(audioContext.destination);
+    snareOscillator.start();
+    snareOscillator.type = SNARE_WAVE_TYPE;
+    snareOscillator.frequency.value = SNARE_NOTE_FREQ;
   }
 
-  //Display move
-  displayMove(moveText, noteName, board, row, column, piece);
+   //Play kick
+   if (isKickBeatStart) {
+    kickOscillator = audioContext.createOscillator();
+    let gainNode = audioContext.createGain();
+    kickOscillator.connect(gainNode);
+    gainNode.gain.setValueAtTime(KICK_VOLUME, 0);
+    gainNode.connect(audioContext.destination);
+    kickOscillator.start();
+    kickOscillator.type = KICK_WAVE_TYPE;
+    kickOscillator.frequency.value = KICK_NOTE_FREQ;
+  }
 
-  //Delay and play remainder of song
-  setTimeout(function () {
+  if (isMoveBeat) {
+    moveIndex++;
+
+    //Get move info
+    let moveText = splitMoves[moveIndex];
+    let piece = parsedMoves[moveIndex][0];
+    let column = parsedMoves[moveIndex][1];
+    let row = parsedMoves[moveIndex][2];
+    let board = parsedMoves[moveIndex][3];
+    let isCastle = parsedMoves[moveIndex][0] === 'O';
+
+    //Get note info
+    let noteBeats, noteFrequency, noteName, noteWaveType, secondFreq;
+    if (!isCastle) {
+      noteBeats = beatsForPieces[piece];
+      noteFrequency = baseNotes[scaleIndexesForColumns[column]].freq * Math.pow(2, octavesForRows[row]);
+      secondFreq = baseNotes[scaleIndexesForColumns[column]].freq * Math.pow(2, row);
+      noteName = baseNotes[scaleIndexesForColumns[column]].name + octavesForRows[row];
+      noteWaveType = waveTypesForPieces[piece];
+    } else {
+      noteBeats = beatsForPieces.K;
+      noteFrequency = baseNotes[scaleIndexesForColumns.a].freq * Math.pow(2, octavesForRows[4]);
+      secondFreq = baseNotes[scaleIndexesForColumns.a].freq * Math.pow(2, 4);
+      noteWaveType = waveTypesForPieces.K;
+    }
+
     //Stop sound
-    oscillator.stop();
-    second_oscillator.stop();
-    if (moveIndex + 1 < parsedMoves.length)
+    if (moveOscillator1 !== null)
+      moveOscillator1.stop();
+    if (moveOscillator2 !== null)
+      moveOscillator2.stop();
+      
+    //Start sound
+    moveOscillator1 = audioContext.createOscillator();
+    moveOscillator2 = audioContext.createOscillator();
+    let gainNode = audioContext.createGain();
+    moveOscillator1.connect(gainNode);
+    moveOscillator2.connect(gainNode);
+    gainNode.gain.setValueAtTime(volumesForWaveTypes[noteWaveType], 0);
+    gainNode.connect(audioContext.destination);
+    moveOscillator1.start();
+    moveOscillator2.start();
+    moveOscillator1.type = noteWaveType;
+    moveOscillator1.frequency.value = noteFrequency;
+    moveOscillator2.type = noteWaveType;
+    moveOscillator2.frequency.value = secondFreq;
+
+    //Update speed
+    if (splitMoves[moveIndex].includes('x')) {
+      currentBeatMilliseconds = finalBeatMilliseconds + (initialBeatMilliseconds - finalBeatMilliseconds) * ((splitMoves.length - moveIndex) / splitMoves.length);
+    }
+
+    //Display move
+    displayMove(moveText, noteName, board, row, column, piece);
+
+    //Get next move time
+    nextMoveBeatIndex = beatIndex + noteBeats;
+  }
+
+  //Play remainder of song
+  beatIndex++;
+  setTimeout(function () {
+    if (moveIndex + 1 < parsedMoves.length || beatIndex !== nextMoveBeatIndex)
+
       //Play remainder of song
-      playSongFromMoveIndex(moveIndex + 1);
-    else {      
+      playSongFromMoveIndex(beatIndex, moveIndex, nextMoveBeatIndex);
+    else {
+
       //Reset
       document.querySelector("#move").innerHTML = '';
       document.querySelector("body").className = '';
+      if (moveOscillator1 !== null)
+        moveOscillator1.stop();
+      if (moveOscillator2 !== null)
+        moveOscillator2.stop();
       currentBeatMilliseconds = initialBeatMilliseconds;
     }
-  }, noteBeats * currentBeatMilliseconds);
+  }, currentBeatMilliseconds);
 }
 
 function displayMove(moveText, noteName, board, row, column, piece) {
@@ -186,7 +280,7 @@ function displayMove(moveText, noteName, board, row, column, piece) {
   document.querySelector("body").classList.remove("piece-B");
   document.querySelector("body").classList.remove("piece-Q");
   document.querySelector("body").classList.remove("piece-K");
-  document.querySelector("body").classList.remove("piece-O"); 
+  document.querySelector("body").classList.remove("piece-O");
   document.querySelector("body").classList.add("piece-" + piece);
 
   //Column class
@@ -198,7 +292,7 @@ function displayMove(moveText, noteName, board, row, column, piece) {
   document.querySelector("body").classList.remove("col-f");
   document.querySelector("body").classList.remove("col-g");
   document.querySelector("body").classList.remove("col-h");
-  document.querySelector("body").classList.add("col-" + column);  
+  document.querySelector("body").classList.add("col-" + column);
 
   //Row class
   document.querySelector("body").classList.remove("row-1");
@@ -345,7 +439,7 @@ const parsedMoves = [
    RNBQ-RK-<br/>`
   ],
   ["B", "e", 7,
-  `R-BQK--R<br/>
+    `R-BQK--R<br/>
   -PPPBPPP<br/>
   P-N--N--<br/>
   ----P---<br/>
@@ -355,7 +449,7 @@ const parsedMoves = [
   RNBQ-RK-<br/>`
   ],
   ["R", "e", 1,
-  `R-BQK--R<br/>
+    `R-BQK--R<br/>
   -PPPBPPP<br/>
   P-N--N--<br/>
   ----P---<br/>
@@ -365,7 +459,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["P", "b", 5,
-  `R-BQK--R<br/>
+    `R-BQK--R<br/>
   --PPBPPP<br/>
   P-N--N--<br/>
   -P--P---<br/>
@@ -375,7 +469,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["B", "b", 3,
-  `R-BQK--R<br/>
+    `R-BQK--R<br/>
   --PPBPPP<br/>
   P-N--N--<br/>
   -P--P---<br/>
@@ -385,7 +479,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["P", "d", 6,
-  `R-BQK--R<br/>
+    `R-BQK--R<br/>
   --P-BPPP<br/>
   P-NP-N--<br/>
   -P--P---<br/>
@@ -395,7 +489,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["P", "c", 3,
-  `R-BQK--R<br/>
+    `R-BQK--R<br/>
   --P-BPPP<br/>
   P-NP-N--<br/>
   -P--P---<br/>
@@ -405,7 +499,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["O", "O", 0,
-  `R-BQ-RK-<br/>
+    `R-BQ-RK-<br/>
   --P-BPPP<br/>
   P-NP-N--<br/>
   -P--P---<br/>
@@ -415,7 +509,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["P", "h", 3,
-  `R-BQ-RK-<br/>
+    `R-BQ-RK-<br/>
   --P-BPPP<br/>
   P-NP-N--<br/>
   -P--P---<br/>
@@ -425,7 +519,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["N", "b", 8,
-  `RNBQ-RK-<br/>
+    `RNBQ-RK-<br/>
   --P-BPPP<br/>
   P--P-N--<br/>
   -P--P---<br/>
@@ -435,7 +529,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["P", "d", 4,
-  `RNBQ-RK-<br/>
+    `RNBQ-RK-<br/>
   --P-BPPP<br/>
   P--P-N--<br/>
   -P--P---<br/>
@@ -445,7 +539,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["N", "d", 7,
-  `R-BQ-RK-<br/>
+    `R-BQ-RK-<br/>
   --PNBPPP<br/>
   P--P-N--<br/>
   -P--P---<br/>
@@ -455,7 +549,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["P", "c", 4,
-  `R-BQ-RK-<br/>
+    `R-BQ-RK-<br/>
   --PNBPPP<br/>
   P--P-N--<br/>
   -P--P---<br/>
@@ -465,7 +559,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["P", "c", 6,
-  `R-BQ-RK-<br/>
+    `R-BQ-RK-<br/>
   ---NBPPP<br/>
   P-PP-N--<br/>
   -P--P---<br/>
@@ -475,7 +569,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["P", "b", 5,
-  `R-BQ-RK-<br/>
+    `R-BQ-RK-<br/>
   ---NBPPP<br/>
   P-PP-N--<br/>
   -P--P---<br/>
@@ -485,7 +579,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["P", "b", 5,
-  `R-BQ-RK-<br/>
+    `R-BQ-RK-<br/>
   ---NBPPP<br/>
   --PP-N--<br/>
   -P--P---<br/>
@@ -495,7 +589,7 @@ const parsedMoves = [
   RNBQR-K-<br/>`
   ],
   ["N", "c", 3,
-  `R-BQ-RK-<br/>
+    `R-BQ-RK-<br/>
   ---NBPPP<br/>
   --PP-N--<br/>
   -P--P---<br/>
@@ -505,7 +599,7 @@ const parsedMoves = [
   R-BQR-K-<br/>`
   ],
   ["B", "b", 7,
-  `R--Q-RK-<br/>
+    `R--Q-RK-<br/>
   -B-NBPPP<br/>
   --PP-N--<br/>
   -P--P---<br/>
@@ -515,7 +609,7 @@ const parsedMoves = [
   R-BQR-K-<br/>`
   ],
   ["B", "g", 5,
-  `R--Q-RK-<br/>
+    `R--Q-RK-<br/>
   -B-NBPPP<br/>
   --PP-N--<br/>
   -P--P-B-<br/>
@@ -525,7 +619,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["P", "b", 4,
-  `R--Q-RK-<br/>
+    `R--Q-RK-<br/>
   -B-NBPPP<br/>
   --PP-N--<br/>
   ----P-B-<br/>
@@ -535,7 +629,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["N", "b", 1,
-  `R--Q-RK-<br/>
+    `R--Q-RK-<br/>
   -B-NBPPP<br/>
   --PP-N--<br/>
   ----P-B-<br/>
@@ -545,7 +639,7 @@ const parsedMoves = [
   RN-QR-K-<br/>`
   ],
   ["P", "h", 6,
-  `R--Q-RK-<br/>
+    `R--Q-RK-<br/>
   -B-NBPP-<br/>
   --PP-N-P<br/>
   ----P-B-<br/>
@@ -555,7 +649,7 @@ const parsedMoves = [
   RN-QR-K-<br/>`
   ],
   ["B", "h", 4,
-  `R--Q-RK-<br/>
+    `R--Q-RK-<br/>
   -B-NBPP-<br/>
   --PP-N-P<br/>
   ----P---<br/>
@@ -565,7 +659,7 @@ const parsedMoves = [
   RN-QR-K-<br/>`
   ],
   ["P", "c", 5,
-  `R--Q-RK-<br/>
+    `R--Q-RK-<br/>
   -B-NBPP-<br/>
   ---P-N-P<br/>
   --P-P---<br/>
@@ -575,7 +669,7 @@ const parsedMoves = [
   RN-QR-K-<br/>`
   ],
   ["P", "e", 5,
-  `R--Q-RK-<br/>
+    `R--Q-RK-<br/>
   -B-NBPP-<br/>
   ---P-N-P<br/>
   --P-P---<br/>
@@ -585,7 +679,7 @@ const parsedMoves = [
   RN-QR-K-<br/>`
   ],
   ["N", "e", 4,
-  `R--Q-RK-<br/>
+    `R--Q-RK-<br/>
   -B-NBPP-<br/>
   ---P---P<br/>
   --P-P---<br/>
@@ -595,7 +689,7 @@ const parsedMoves = [
   RN-QR-K-<br/>`
   ],
   ["B", "e", 7,
-  `R--Q-RK-<br/>
+    `R--Q-RK-<br/>
   -B-NBPP-<br/>
   ---P---P<br/>
   --P-P---<br/>
@@ -605,7 +699,7 @@ const parsedMoves = [
   RN-QR-K-<br/>`
   ],
   ["Q", "e", 7,
-  `R----RK-<br/>
+    `R----RK-<br/>
   -B-NQPP-<br/>
   ---P---P<br/>
   --P-P---<br/>
@@ -615,7 +709,7 @@ const parsedMoves = [
   RN-QR-K-<br/>`
   ],
   ["P", "d", 6,
-  `R----RK-<br/>
+    `R----RK-<br/>
   -B-NQPP-<br/>
   ---P---P<br/>
   --P-----<br/>
@@ -625,7 +719,7 @@ const parsedMoves = [
   RN-QR-K-<br/>`
   ],
   ["Q", "f", 6,
-  `R----RK-<br/>
+    `R----RK-<br/>
   -B-N-PP-<br/>
   ---P-Q-P<br/>
   --P-----<br/>
@@ -635,7 +729,7 @@ const parsedMoves = [
   RN-QR-K-<br/>`
   ],
   ["N", "d", 2,
-  `R----RK-<br/>
+    `R----RK-<br/>
   -B-N-PP-<br/>
   ---P-Q-P<br/>
   --P-----<br/>
@@ -645,7 +739,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["N", "d", 6,
-  `R----RK-<br/>
+    `R----RK-<br/>
   -B-N-PP-<br/>
   ---N-Q-P<br/>
   --P-----<br/>
@@ -655,7 +749,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["N", "c", 4,
-  `R----RK-<br/>
+    `R----RK-<br/>
   -B-N-PP-<br/>
   ---N-Q-P<br/>
   --P-----<br/>
@@ -665,7 +759,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["N", "c", 4,
-  `R----RK-<br/>
+    `R----RK-<br/>
   -B-N-PP-<br/>
   -----Q-P<br/>
   --P-----<br/>
@@ -675,7 +769,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["B", "c", 4,
-  `R----RK-<br/>
+    `R----RK-<br/>
   -B-N-PP-<br/>
   -----Q-P<br/>
   --P-----<br/>
@@ -685,7 +779,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["N", "b", 6,
-  `R----RK-<br/>
+    `R----RK-<br/>
   -B---PP-<br/>
   -N---Q-P<br/>
   --P-----<br/>
@@ -695,7 +789,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["N", "e", 5,
-  `R----RK-<br/>
+    `R----RK-<br/>
   -B---PP-<br/>
   -N---Q-P<br/>
   --P-N---<br/>
@@ -705,7 +799,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["R", "e", 8,
-  `----RRK-<br/>
+    `----RRK-<br/>
   -B---PP-<br/>
   -N---Q-P<br/>
   --P-N---<br/>
@@ -715,7 +809,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["B", "f", 7,
-  `----RRK-<br/>
+    `----RRK-<br/>
   -B---BP-<br/>
   -N---Q-P<br/>
   --P-N---<br/>
@@ -725,7 +819,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["R", "f", 7,
-  `----R-K-<br/>
+    `----R-K-<br/>
   -B---RP-<br/>
   -N---Q-P<br/>
   --P-N---<br/>
@@ -735,7 +829,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["N", "f", 7,
-  `----R-K-<br/>
+    `----R-K-<br/>
   -B---NP-<br/>
   -N---Q-P<br/>
   --P-----<br/>
@@ -745,7 +839,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["R", "e", 1,
-  `------K-<br/>
+    `------K-<br/>
   -B---NP-<br/>
   -N---Q-P<br/>
   --P-----<br/>
@@ -755,7 +849,7 @@ const parsedMoves = [
   R--QR-K-<br/>`
   ],
   ["Q", "e", 1,
-  `------K-<br/>
+    `------K-<br/>
   -B---NP-<br/>
   -N---Q-P<br/>
   --P-----<br/>
@@ -765,7 +859,7 @@ const parsedMoves = [
   R---Q-K-<br/>`
   ],
   ["K", "f", 7,
-  `--------<br/>
+    `--------<br/>
   -B---KP-<br/>
   -N---Q-P<br/>
   --P-----<br/>
@@ -775,7 +869,7 @@ const parsedMoves = [
   R---Q-K-<br/>`
   ],
   ["Q", "e", 3,
-  `--------<br/>
+    `--------<br/>
   -B---KP-<br/>
   -N---Q-P<br/>
   --P-----<br/>
@@ -785,7 +879,7 @@ const parsedMoves = [
   R-----K-<br/>`
   ],
   ["Q", "g", 5,
-  `--------<br/>
+    `--------<br/>
   -B---KP-<br/>
   -N-----P<br/>
   --P---Q-<br/>
@@ -795,7 +889,7 @@ const parsedMoves = [
   R-----K-<br/>`
   ],
   ["Q", "g", 5,
-  `--------<br/>
+    `--------<br/>
   -B---KP-<br/>
   -N-----P<br/>
   --P---Q-<br/>
@@ -805,7 +899,7 @@ const parsedMoves = [
   R-----K-<br/>`
   ],
   ["P", "g", 5,
-  `--------<br/>
+    `--------<br/>
   -B---KP-<br/>
   -N------<br/>
   --P---P-<br/>
@@ -815,7 +909,7 @@ const parsedMoves = [
   R-----K-<br/>`
   ],
   ["P", "b", 3,
-  `--------<br/>
+    `--------<br/>
   -B---KP-<br/>
   -N------<br/>
   --P---P-<br/>
@@ -825,7 +919,7 @@ const parsedMoves = [
   R-----K-<br/>`
   ],
   ["K", "e", 6,
-  `--------<br/>
+    `--------<br/>
   -B----P-<br/>
   -N--K---<br/>
   --P---P-<br/>
@@ -835,7 +929,7 @@ const parsedMoves = [
   R-----K-<br/>`
   ],
   ["P", "a", 3,
-  `--------<br/>
+    `--------<br/>
   -B----P-<br/>
   -N--K---<br/>
   --P---P-<br/>
@@ -845,7 +939,7 @@ const parsedMoves = [
   R-----K-<br/>`
   ],
   ["K", "d", 6,
-  `--------<br/>
+    `--------<br/>
   -B----P-<br/>
   -N-K----<br/>
   --P---P-<br/>
@@ -855,7 +949,7 @@ const parsedMoves = [
   R-----K-<br/>`
   ],
   ["P", "b", 4,
-  `--------<br/>
+    `--------<br/>
   -B----P-<br/>
   -N-K----<br/>
   --P---P-<br/>
@@ -865,7 +959,7 @@ const parsedMoves = [
   R-----K-<br/>`
   ],
   ["P", "b", 4,
-  `--------<br/>
+    `--------<br/>
   -B----P-<br/>
   -N-K----<br/>
   ------P-<br/>
@@ -875,7 +969,7 @@ const parsedMoves = [
   R-----K-<br/>`
   ],
   ["R", "a", 5,
-  `--------<br/>
+    `--------<br/>
   -B----P-<br/>
   -N-K----<br/>
   R-----P-<br/>
@@ -885,7 +979,7 @@ const parsedMoves = [
   ------K-<br/>`
   ],
   ["N", "d", 5,
-  `--------<br/>
+    `--------<br/>
   -B----P-<br/>
   ---K----<br/>
   R--N--P-<br/>
@@ -895,7 +989,7 @@ const parsedMoves = [
   ------K-<br/>`
   ],
   ["P", "f", 3,
-  `--------<br/>
+    `--------<br/>
   -B----P-<br/>
   ---K----<br/>
   R--N--P-<br/>
@@ -905,7 +999,7 @@ const parsedMoves = [
   ------K-<br/>`
   ],
   ["B", "c", 8,
-  `--B-----<br/>
+    `--B-----<br/>
   ------P-<br/>
   ---K----<br/>
   R--N--P-<br/>
@@ -915,7 +1009,7 @@ const parsedMoves = [
   ------K-<br/>`
   ],
   ["K", "f", 2,
-  `--B-----<br/>
+    `--B-----<br/>
   ------P-<br/>
   ---K----<br/>
   R--N--P-<br/>
@@ -925,7 +1019,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["B", "f", 5,
-  `--------<br/>
+    `--------<br/>
   ------P-<br/>
   ---K----<br/>
   R--N-BP-<br/>
@@ -935,7 +1029,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["R", "a", 7,
-  `--------<br/>
+    `--------<br/>
   R-----P-<br/>
   ---K----<br/>
   ---N-BP-<br/>
@@ -945,7 +1039,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["P", "g", 6,
-  `--------<br/>
+    `--------<br/>
   R-------<br/>
   ---K--P-<br/>
   ---N-BP-<br/>
@@ -955,7 +1049,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["R", "a", 6,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R--K--P-<br/>
   ---N-BP-<br/>
@@ -965,7 +1059,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["K", "c", 5,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R-----P-<br/>
   --KN-BP-<br/>
@@ -975,7 +1069,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["K", "e", 1,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R-----P-<br/>
   --KN-BP-<br/>
@@ -985,7 +1079,7 @@ const parsedMoves = [
   ----K---<br/>`
   ],
   ["N", "f", 4,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R-----P-<br/>
   --K--BP-<br/>
@@ -995,7 +1089,7 @@ const parsedMoves = [
   ----K---<br/>`
   ],
   ["P", "g", 3,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R-----P-<br/>
   --K--BP-<br/>
@@ -1005,7 +1099,7 @@ const parsedMoves = [
   ----K---<br/>`
   ],
   ["N", "h", 3,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R-----P-<br/>
   --K--BP-<br/>
@@ -1015,7 +1109,7 @@ const parsedMoves = [
   ----K---<br/>`
   ],
   ["K", "d", 2,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R-----P-<br/>
   --K--BP-<br/>
@@ -1025,7 +1119,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["K", "b", 5,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R-----P-<br/>
   -K---BP-<br/>
@@ -1035,7 +1129,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["R", "d", 6,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   ---R--P-<br/>
   -K---BP-<br/>
@@ -1045,7 +1139,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["K", "c", 5,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   ---R--P-<br/>
   --K--BP-<br/>
@@ -1055,7 +1149,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["R", "a", 6,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R-----P-<br/>
   --K--BP-<br/>
@@ -1065,7 +1159,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["N", "f", 2,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R-----P-<br/>
   --K--BP-<br/>
@@ -1075,7 +1169,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["P", "g", 4,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R-----P-<br/>
   --K--BP-<br/>
@@ -1085,7 +1179,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["B", "d", 3,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   R-----P-<br/>
   --K---P-<br/>
@@ -1095,7 +1189,7 @@ const parsedMoves = [
   --------<br/>`
   ],
   ["R", "e", 6,
-  `--------<br/>
+    `--------<br/>
   --------<br/>
   ----R-P-<br/>
   --K---P-<br/>
