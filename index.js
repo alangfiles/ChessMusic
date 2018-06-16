@@ -1,26 +1,36 @@
+/*************/
+/* Constants */
+/*************/
+
+const INITIAL_MILLISECONDS_PER_BEAT = 32;
+const FINAL_MILLISECONDS_PER_BEAT = 28;
+const BEATS_PER_MEASURE = 40;
+const DOWN_BEAT_VOLUME_COEFFICIENT = 2.0;
+const PERCUSSION_VOLUME_COEFFICIENT = 1
+
 //Cymbal beat
 const CYMBAL_WAVE_TYPE = 'sine';
 const CYMBAL_NOTE_FREQ = 1760;
-const CYMBAL_BEAT_FREQ = 10;
+const CYMBAL_REPEAT_BEATS = 10;
 const CYMBAL_BEAT_OFFSET = 0;
 const CYMBAL_DURATION = 1;
-const CYMBAL_VOLUME = .16;
+const CYMBAL_VOLUME = .16 * PERCUSSION_VOLUME_COEFFICIENT;
 //Snare beat
 const SNARE_WAVE_TYPE = 'square';
 const SNARE_NOTE_FREQ = 440;
-const SNARE_BEAT_FREQ = 40;
+const SNARE_REPEAT_BEATS = 40;
 const SNARE_BEAT_OFFSET = 0;
 const SNARE_DURATION = 2;
-const SNARE_VOLUME = .08;
+const SNARE_VOLUME = .08 * PERCUSSION_VOLUME_COEFFICIENT;
 //Kick beat
 const KICK_WAVE_TYPE = 'sawtooth';
 const KICK_NOTE_FREQ = 220;
-const KICK_BEAT_FREQ = 40;
+const KICK_REPEAT_BEATS = 40;
 const KICK_BEAT_OFFSET = 20;
 const KICK_DURATION = 2;
-const KICK_VOLUME = .12;
+const KICK_VOLUME = .12 * PERCUSSION_VOLUME_COEFFICIENT;
 
-let baseNotes = [{
+let BASE_NOTES = [{
     name: 'a',
     freq: 55
   },
@@ -70,18 +80,22 @@ let baseNotes = [{
   },
 ]
 
-const scaleIndexesForColumns = {
+const BASE_NOTE_INDEX_BY_COLUMN = {
   a: 0,
-  b: 2,
+  b: 2,  
   c: 4,
+  //c: 3, //Alan's other scale
   d: 5,
   e: 7,
+  //e: 6, //Alan's other scale
   f: 9,
+  //f: 8, //Alan's other scale
   g: 10,
+  //g: 9, //Alan's other scale
   h: 11
 }
 
-const beatsForPieces = {
+const BEATS_BY_PIECE = {
   P: 5,
   B: 10,
   N: 10,
@@ -91,7 +105,7 @@ const beatsForPieces = {
 }
 
 
-const waveTypesForPieces = {
+const WAVE_TYPE_BY_PIECE = {
   P: 'sine',
   B: 'triangle',
   N: 'triangle',
@@ -100,7 +114,7 @@ const waveTypesForPieces = {
   K: 'square'
 }
 
-const octavesForRows = {
+const OCTAVE_BY_ROW = {
   1: 1,
   2: 1,
   3: 2,
@@ -111,15 +125,16 @@ const octavesForRows = {
   8: 4
 }
 
-const volumesForWaveTypes = {
-  'sine': .5,
-  'triangle': .25,
-  'square': .08
+const VOLUME_BY_WAVE_TYPE = {
+  'sine': .25,
+  'triangle': .125,
+  'square': .04
 }
 
-const initialBeatMilliseconds = 32;
-const finalBeatMilliseconds = 28;
-let currentBeatMilliseconds = initialBeatMilliseconds;
+
+/*************/
+/* Play game */
+/*************/
 
 //Initialize audio
 var audioContext = new AudioContext();
@@ -128,15 +143,16 @@ let moveOscillator2 = null;
 let cymbalOscillator = null;
 let snareOscillator = null;
 let kickOscillator = null;
+let currentMillisecondsPerBeat = INITIAL_MILLISECONDS_PER_BEAT;
 
 function playSongFromMoveIndex(beatIndex, moveIndex, nextMoveBeatIndex) {
   let isMoveBeat = beatIndex === nextMoveBeatIndex;
-  let isCymbalBeatStart = (beatIndex + CYMBAL_BEAT_OFFSET) % CYMBAL_BEAT_FREQ === 0;
-  let isCymbalBeatEnd = ((beatIndex + CYMBAL_BEAT_OFFSET) - CYMBAL_DURATION) % CYMBAL_BEAT_FREQ === 0;
-  let isSnareBeatStart = (beatIndex + SNARE_BEAT_OFFSET) % SNARE_BEAT_FREQ === 0;
-  let isSnareBeatEnd = ((beatIndex + SNARE_BEAT_OFFSET) - SNARE_DURATION) % SNARE_BEAT_FREQ === 0;
-  let isKickBeatStart = (beatIndex + KICK_BEAT_OFFSET) % KICK_BEAT_FREQ === 0;  
-  let isKickBeatEnd = ((beatIndex - KICK_DURATION) + KICK_BEAT_OFFSET) % KICK_BEAT_FREQ === 0;
+  let isCymbalBeatStart = (beatIndex + CYMBAL_BEAT_OFFSET) % CYMBAL_REPEAT_BEATS === 0;
+  let isCymbalBeatEnd = ((beatIndex + CYMBAL_BEAT_OFFSET) - CYMBAL_DURATION) % CYMBAL_REPEAT_BEATS === 0;
+  let isSnareBeatStart = (beatIndex + SNARE_BEAT_OFFSET) % SNARE_REPEAT_BEATS === 0;
+  let isSnareBeatEnd = ((beatIndex + SNARE_BEAT_OFFSET) - SNARE_DURATION) % SNARE_REPEAT_BEATS === 0;
+  let isKickBeatStart = (beatIndex + KICK_BEAT_OFFSET) % KICK_REPEAT_BEATS === 0;
+  let isKickBeatEnd = ((beatIndex - KICK_DURATION) + KICK_BEAT_OFFSET) % KICK_REPEAT_BEATS === 0;
 
   //Stop percussion
   if (isCymbalBeatEnd && cymbalOscillator !== null)
@@ -158,8 +174,8 @@ function playSongFromMoveIndex(beatIndex, moveIndex, nextMoveBeatIndex) {
     cymbalOscillator.frequency.value = CYMBAL_NOTE_FREQ;
   }
 
-   //Play snare
-   if (isSnareBeatStart) {
+  //Play snare
+  if (isSnareBeatStart) {
     snareOscillator = audioContext.createOscillator();
     let gainNode = audioContext.createGain();
     snareOscillator.connect(gainNode);
@@ -170,8 +186,8 @@ function playSongFromMoveIndex(beatIndex, moveIndex, nextMoveBeatIndex) {
     snareOscillator.frequency.value = SNARE_NOTE_FREQ;
   }
 
-   //Play kick
-   if (isKickBeatStart) {
+  //Play kick
+  if (isKickBeatStart) {
     kickOscillator = audioContext.createOscillator();
     let gainNode = audioContext.createGain();
     kickOscillator.connect(gainNode);
@@ -196,16 +212,16 @@ function playSongFromMoveIndex(beatIndex, moveIndex, nextMoveBeatIndex) {
     //Get note info
     let noteBeats, noteFrequency, noteName, noteWaveType, secondFreq;
     if (!isCastle) {
-      noteBeats = beatsForPieces[piece];
-      noteFrequency = baseNotes[scaleIndexesForColumns[column]].freq * Math.pow(2, octavesForRows[row]);
-      secondFreq = baseNotes[scaleIndexesForColumns[column]].freq * Math.pow(2, row);
-      noteName = baseNotes[scaleIndexesForColumns[column]].name + octavesForRows[row];
-      noteWaveType = waveTypesForPieces[piece];
+      noteBeats = BEATS_BY_PIECE[piece];
+      noteFrequency = BASE_NOTES[BASE_NOTE_INDEX_BY_COLUMN[column]].freq * Math.pow(2, OCTAVE_BY_ROW[row]);
+      secondFreq = BASE_NOTES[BASE_NOTE_INDEX_BY_COLUMN[column]].freq * Math.pow(2, row);
+      noteName = BASE_NOTES[BASE_NOTE_INDEX_BY_COLUMN[column]].name + OCTAVE_BY_ROW[row];
+      noteWaveType = WAVE_TYPE_BY_PIECE[piece];
     } else {
-      noteBeats = beatsForPieces.K;
-      noteFrequency = baseNotes[scaleIndexesForColumns.a].freq * Math.pow(2, octavesForRows[4]);
-      secondFreq = baseNotes[scaleIndexesForColumns.a].freq * Math.pow(2, 4);
-      noteWaveType = waveTypesForPieces.K;
+      noteBeats = BEATS_BY_PIECE.K;
+      noteFrequency = BASE_NOTES[BASE_NOTE_INDEX_BY_COLUMN.a].freq * Math.pow(2, OCTAVE_BY_ROW[4]);
+      secondFreq = BASE_NOTES[BASE_NOTE_INDEX_BY_COLUMN.a].freq * Math.pow(2, 4);
+      noteWaveType = WAVE_TYPE_BY_PIECE.K;
     }
 
     //Stop sound
@@ -213,29 +229,47 @@ function playSongFromMoveIndex(beatIndex, moveIndex, nextMoveBeatIndex) {
       moveOscillator1.stop();
     if (moveOscillator2 !== null)
       moveOscillator2.stop();
-      
-    //Start sound
-    moveOscillator1 = audioContext.createOscillator();
-    moveOscillator2 = audioContext.createOscillator();
-    let gainNode = audioContext.createGain();
-    moveOscillator1.connect(gainNode);
-    moveOscillator2.connect(gainNode);
-    gainNode.gain.setValueAtTime(volumesForWaveTypes[noteWaveType], 0);
-    gainNode.connect(audioContext.destination);
-    moveOscillator1.start();
-    moveOscillator2.start();
-    moveOscillator1.type = noteWaveType;
-    moveOscillator1.frequency.value = noteFrequency;
-    moveOscillator2.type = noteWaveType;
-    moveOscillator2.frequency.value = secondFreq;
 
-    //Update speed
-    if (splitMoves[moveIndex].includes('x')) {
-      currentBeatMilliseconds = finalBeatMilliseconds + (initialBeatMilliseconds - finalBeatMilliseconds) * ((splitMoves.length - moveIndex) / splitMoves.length);
+    //If not spanning a measure -> play note
+    let beatsUntilNextMeasure = BEATS_PER_MEASURE - (beatIndex % BEATS_PER_MEASURE);
+    if (beatsUntilNextMeasure === 0 || noteBeats <= beatsUntilNextMeasure) {
+
+      //Start sound
+      moveOscillator1 = audioContext.createOscillator();
+      moveOscillator2 = audioContext.createOscillator();
+      let gainNode = audioContext.createGain();
+      moveOscillator1.connect(gainNode);
+      moveOscillator2.connect(gainNode);
+      let noteVolume = VOLUME_BY_WAVE_TYPE[noteWaveType];
+      if (beatIndex % BEATS_PER_MEASURE === 0)
+        noteVolume *= DOWN_BEAT_VOLUME_COEFFICIENT;
+      if (noteVolume > 1)
+        noteVolume = 1;
+      gainNode.gain.setValueAtTime(noteVolume, 0);
+      gainNode.connect(audioContext.destination);
+      moveOscillator1.start();
+      moveOscillator2.start();
+      moveOscillator1.type = noteWaveType;
+      moveOscillator1.frequency.value = noteFrequency;
+      moveOscillator2.type = noteWaveType;
+      moveOscillator2.frequency.value = secondFreq;
+
+      //Update speed
+      if (splitMoves[moveIndex].includes('x')) {
+        currentMillisecondsPerBeat = FINAL_MILLISECONDS_PER_BEAT + (INITIAL_MILLISECONDS_PER_BEAT - FINAL_MILLISECONDS_PER_BEAT) * ((splitMoves.length - moveIndex) / splitMoves.length);
+      }
+
+      //Display move
+      displayMove(moveText, noteName, board, row, column, piece);
+
+      //If spanning a measure -> rest
+    } else {
+      moveIndex--;
+      moveOscillator1 = null;
+      moveOscillator2 = null;
+      noteBeats = beatsUntilNextMeasure;
+      console.log(beatsUntilNextMeasure);
     }
-
-    //Display move
-    displayMove(moveText, noteName, board, row, column, piece);
 
     //Get next move time
     nextMoveBeatIndex = beatIndex + noteBeats;
@@ -257,53 +291,21 @@ function playSongFromMoveIndex(beatIndex, moveIndex, nextMoveBeatIndex) {
         moveOscillator1.stop();
       if (moveOscillator2 !== null)
         moveOscillator2.stop();
-      currentBeatMilliseconds = initialBeatMilliseconds;
+      currentMillisecondsPerBeat = INITIAL_MILLISECONDS_PER_BEAT;
     }
-  }, currentBeatMilliseconds);
+  }, currentMillisecondsPerBeat);
 }
 
 function displayMove(moveText, noteName, board, row, column, piece) {
 
   //Move text
-  document.querySelector("#move").innerHTML = splitMoves[moveText];
+  document.querySelector("#move").innerHTML = moveText;
 
   //Note name
   document.querySelector("#note").innerHTML = noteName;
 
   //Board
   document.querySelector("#chess-board").innerHTML = board;
-
-  //Piece class
-  document.querySelector("body").classList.remove("piece-P");
-  document.querySelector("body").classList.remove("piece-R");
-  document.querySelector("body").classList.remove("piece-N");
-  document.querySelector("body").classList.remove("piece-B");
-  document.querySelector("body").classList.remove("piece-Q");
-  document.querySelector("body").classList.remove("piece-K");
-  document.querySelector("body").classList.remove("piece-O");
-  document.querySelector("body").classList.add("piece-" + piece);
-
-  //Column class
-  document.querySelector("body").classList.remove("col-a");
-  document.querySelector("body").classList.remove("col-b");
-  document.querySelector("body").classList.remove("col-c");
-  document.querySelector("body").classList.remove("col-d");
-  document.querySelector("body").classList.remove("col-e");
-  document.querySelector("body").classList.remove("col-f");
-  document.querySelector("body").classList.remove("col-g");
-  document.querySelector("body").classList.remove("col-h");
-  document.querySelector("body").classList.add("col-" + column);
-
-  //Row class
-  document.querySelector("body").classList.remove("row-1");
-  document.querySelector("body").classList.remove("row-2");
-  document.querySelector("body").classList.remove("row-3");
-  document.querySelector("body").classList.remove("row-4");
-  document.querySelector("body").classList.remove("row-5");
-  document.querySelector("body").classList.remove("row-6");
-  document.querySelector("body").classList.remove("row-7");
-  document.querySelector("body").classList.remove("row-8");
-  document.querySelector("body").classList.add("row-" + row);
 }
 
 
